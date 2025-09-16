@@ -1,4 +1,0 @@
-pip install flask flask-cors requests pdfplumber
-pip install langchain-community faiss-cpu sentence-transformers
-pip install python-telegram-bot==20.6
-pip install python-telegram-bot==20.6

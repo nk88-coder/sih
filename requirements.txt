@@ -1,0 +1,8 @@
+flask
+flask-cors
+requests
+pdfplumber
+langchain-community
+faiss-cpu
+sentence-transformers
+python-telegram-bot==20.6
