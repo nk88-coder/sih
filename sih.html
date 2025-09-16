@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SIH Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/sih.css" />
 </head>
 <body>
@@ -13,22 +14,26 @@
         <div class="grid3d"></div>
     </div>
     <div class="app">
-        <header class="header">
-            <div class="title">SIH Assistant</div>
+        <header class="header select-none">
+            <div class="title tracking-wide">SIH Assistant</div>
         </header>
         <div class="orb-container">
-            <div class="avatar-orb"></div>
+            <div class="avatar-orb shadow-2xl"></div>
         </div>
         <main class="main">
-            <div id="messages" class="messages"></div>
+            <div id="messages" class="messages mx-auto"></div>
         </main>
         <footer class="composer">
-            <input id="prompt" class="input" type="text" placeholder="Type your message..." />
+            <input id="prompt" class="input transition focus:ring-2 focus:ring-white/40" type="text" placeholder="Type your message..." />
             <input id="fileInput" type="file" style="display:none" />
-            <button id="pickFile" class="file-btn" title="Pick a file">📁</button>
-            <button id="askBtn" class="file-btn" title="Ask over PDF">🔎</button>
-            <button id="tgBtn" class="file-btn" title="Open Telegram Bot">✈️</button>
-            <button id="send" class="send">Send</button>
+            <button id="pickFile" class="file-btn transition ease-out duration-200 hover:scale-105 focus:ring-2 focus:ring-white/40" title="Pick a file">📁</button>
+            <button id="askBtn" class="file-btn transition ease-out duration-200 hover:scale-105 focus:ring-2 focus:ring-white/40" title="Ask over PDF">🔎</button>
+            <button id="ocrBtn" class="file-btn transition ease-out duration-200 hover:scale-105 focus:ring-2 focus:ring-white/40" title="OCR image">🖼️</button>
+            <button id="tgBtn" class="file-btn transition ease-out duration-200 hover:scale-105 focus:ring-2 focus:ring-white/40" title="Open Telegram Bot">✈️</button>
+            <label class="file-btn" style="display:flex;align-items:center;gap:8px;padding:0 12px;cursor:pointer;">
+                <input type="checkbox" id="voiceToggle" style="margin:0 6px 0 0;"> Voice
+            </label>
+            <button id="send" class="send transition ease-out duration-200 hover:scale-[1.02] focus:ring-2 focus:ring-white/50">Send</button>
         </footer>
     </div>
 

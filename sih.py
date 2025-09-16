@@ -10,6 +10,10 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
 import threading
 import subprocess
+import asyncio
+from PIL import Image
+import numpy as np
+import easyocr
 
 
 SARVAM_BASE_URL = "https://api.sarvam.ai/v1"
@@ -20,6 +24,11 @@ SARVAM_API_KEY = "sk_y1l5grsk_TZnY6k9GJ9Ea8a0QL8sGrePN"
 print("[SIH] Loading sentence-transformers embeddings (all-MiniLM-L6-v2)...")
 EMBEDDINGS = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 print("[SIH] Embeddings loaded.")
+
+# Initialize EasyOCR once (English)
+print("[SIH] Loading EasyOCR reader (en)...")
+OCR_READER = easyocr.Reader(['en'], gpu=False)
+print("[SIH] EasyOCR loaded.")
 
 
 def get_api_key() -> str:
@@ -276,6 +285,141 @@ def main() -> int:
                 pass
 
             return jsonify({"results": hits, "chunks": len(docs), "answer": ai_reply})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # Edge TTS synthesis
+    @app.post("/api/sih-tts")
+    def api_sih_tts():
+        try:
+            data = request.get_json(silent=True) or {}
+            text = str(data.get("text", "")).strip()
+            voice = str(data.get("voice", "en-US-JennyNeural")).strip() or "en-US-JennyNeural"
+            rate = str(data.get("rate", "+0%"))
+            if not text:
+                return jsonify({"error": "text is required"}), 400
+
+            import edge_tts  # lazy import
+
+            async def synth(t: str, v: str, r: str) -> bytes:
+                communicate = edge_tts.Communicate(t, v, rate=r)
+                audio_bytes = bytearray()
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        audio_bytes.extend(chunk["data"]) 
+                return bytes(audio_bytes)
+
+            audio = asyncio.run(synth(text, voice, rate))
+            from flask import Response
+            return Response(audio, mimetype='audio/mpeg')
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # OCR image extraction (EasyOCR)
+    @app.post("/api/sih-ocr")
+    def api_sih_ocr():
+        try:
+            if 'file' not in request.files:
+                return jsonify({"error": "No file part in request"}), 400
+            file = request.files['file']
+            if file.filename is None or file.filename.strip() == "":
+                return jsonify({"error": "No file selected"}), 400
+            filename = file.filename
+            allowed = (filename.lower().endswith('.png') or filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg'))
+            if not allowed:
+                return jsonify({"error": "Only image files (.png, .jpg, .jpeg) are allowed"}), 400
+
+            try:
+                img = Image.open(file.stream).convert('RGB')
+                np_img = np.array(img)
+                # EasyOCR returns list of text lines when detail=0
+                lines = OCR_READER.readtext(np_img, detail=0, paragraph=False)
+                text = "\n".join([line.strip() for line in lines if line and line.strip()])
+            except Exception as e:
+                return jsonify({"error": f"OCR failed: {e}"}), 500
+
+            text = (text or '').strip()
+            if not text:
+                text = "[No text detected]"
+
+            max_chars = 20000
+            if len(text) > max_chars:
+                text = text[:max_chars] + "\n... [truncated]"
+
+            return jsonify({"text": text, "filename": filename})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # Ask over OCR image (RAG flow similar to PDF)
+    @app.post("/api/sih-ask-ocr")
+    def api_sih_ask_ocr():
+        try:
+            query = request.form.get('query', '').strip()
+            if not query:
+                return jsonify({"error": "query is required"}), 400
+            if 'file' not in request.files:
+                return jsonify({"error": "No file part in request"}), 400
+            file = request.files['file']
+            if file.filename is None or file.filename.strip() == "":
+                return jsonify({"error": "No file selected"}), 400
+            filename = file.filename
+            allowed = (filename.lower().endswith('.png') or filename.lower().endswith('.jpg') or filename.lower().endswith('.jpeg'))
+            if not allowed:
+                return jsonify({"error": "Only image files (.png/.jpg/.jpeg) are allowed"}), 400
+
+            # OCR extract
+            try:
+                img = Image.open(file.stream).convert('RGB')
+                np_img = np.array(img)
+                lines = OCR_READER.readtext(np_img, detail=0, paragraph=False)
+                full_text = "\n".join([line.strip() for line in lines if line and line.strip()])
+            except Exception as e:
+                return jsonify({"error": f"OCR failed: {e}"}), 500
+
+            if not full_text:
+                return jsonify({"error": "No extractable text found in image"}), 400
+
+            # Cap and chunk
+            capped_text = full_text[:20000]
+            chunks = custom_chunker(capped_text, max_sentences=3)
+            docs = [Document(page_content=c) for c in chunks]
+            if not docs:
+                return jsonify({"error": "No chunks produced from OCR text"}), 400
+
+            vectorstore = FAISS.from_documents(docs, EMBEDDINGS)
+            results = vectorstore.similarity_search(query, k=3)
+            hits = [r.page_content for r in results] if results else []
+
+            # Build Sarvam prompt with OCR context and convo
+            recent_convos = chat_history[-5:] if chat_history else []
+            system_context_parts = [
+                "You are a helpful, witty assistant. Explain the answer in simple human terms. Keep the answer under 250 tokens.",
+            ]
+            if hits:
+                joined_context = "\n\n".join(hits)
+                if len(joined_context) > 4000:
+                    joined_context = joined_context[:4000] + "\n... [context truncated]"
+                system_context_parts.append(f"Context from the OCR image:\n{joined_context}")
+            if recent_convos:
+                system_context_parts.append(f"Previous convos: {recent_convos}")
+            system_content = "\n\n".join(system_context_parts)
+
+            messages = [
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": query},
+            ]
+
+            try:
+                ai_reply = sarvam_create_chat_completion(messages, max_tokens=300, temperature=0.7, stream=False)
+            except Exception as e:
+                ai_reply = f"[Sarvam error] {e}"
+
+            try:
+                chat_history.append({"user": query, "ai": ai_reply})
+            except Exception:
+                pass
+
+            return jsonify({"answer": ai_reply, "chunks": len(docs)})
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 

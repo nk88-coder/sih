@@ -128,12 +128,12 @@ body {
 .input:focus { box-shadow: 0 0 0 2px rgba(255,255,255,0.4), 0 8px 24px rgba(255,255,255,0.2); transform: translateY(-1px); background: #111111; }
 .input::placeholder { color: #8ea2cf; }
 .send { padding: 0 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18); background: #0f0f0f; color: #ffffff; font-weight: 800; cursor: pointer; box-shadow: 0 10px 24px rgba(0,0,0,0.45); transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease, background 140ms ease; }
-.send:hover { transform: translateY(-1px); filter: none; background: linear-gradient(135deg, #ffffff, #bfbfbf); color: #000; box-shadow: 0 0 24px rgba(255,255,255,0.35), 0 8px 24px rgba(255,255,255,0.15); }
+.send:hover { transform: translateY(-1px) scale(1.02); filter: none; background: linear-gradient(135deg, #ffffff, #bfbfbf); color: #000; box-shadow: 0 0 24px rgba(255,255,255,0.35), 0 8px 24px rgba(255,255,255,0.15); }
 .send:active { transform: translateY(0); filter: brightness(0.98); }
 .send:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .file-btn { padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.18); background: #0f0f0f; color: var(--text); font-weight: 700; cursor: pointer; box-shadow: 0 10px 24px rgba(0,0,0,0.25); transition: transform 140ms ease, filter 140ms ease, background 140ms ease, box-shadow 140ms ease; }
-.file-btn:hover { transform: translateY(-1px); filter: none; background: linear-gradient(135deg, #ffffff, #bfbfbf); color: #000; box-shadow: 0 0 24px rgba(255,255,255,0.35), 0 8px 24px rgba(255,255,255,0.15); }
+.file-btn:hover { transform: translateY(-1px) scale(1.05); filter: none; background: linear-gradient(135deg, #ffffff, #bfbfbf); color: #000; box-shadow: 0 0 24px rgba(255,255,255,0.35), 0 8px 24px rgba(255,255,255,0.15); }
 .file-btn:active { transform: translateY(0); filter: brightness(0.98); }
 
 .thinking { opacity: 0.85; animation: pulse 1.4s ease-in-out infinite; }
