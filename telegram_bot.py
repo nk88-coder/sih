@@ -13,12 +13,12 @@ from langchain.docstore.document import Document
 
 
 # Hardcoded token per user request
-TOKEN = "7807406039:AAHFfQgjDnnQ6ZdBIOk050v_VoMOC5_0M5M"
+TOKEN = "tele token"
 
 # Sarvam API config (mirrors sih.py)
 SARVAM_BASE_URL = "https://api.sarvam.ai/v1"
 MODEL_PATH = "sarvam-m"
-SARVAM_API_KEY = "sk_y1l5grsk_TZnY6k9GJ9Ea8a0QL8sGrePN"
+SARVAM_API_KEY = "sarvam api key"
 
 
 def _sarvam_chat_sync(user_message: str, max_tokens: int = 200, temperature: float = 0.7) -> str:
@@ -254,5 +254,6 @@ def run_bot():
 
 if __name__ == "__main__":
     run_bot()
+
 
 
