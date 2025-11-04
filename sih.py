@@ -18,7 +18,7 @@ import easyocr
 
 SARVAM_BASE_URL = "https://api.sarvam.ai/v1"
 MODEL_PATH = "sarvam-m"
-SARVAM_API_KEY = "sk_y1l5grsk_TZnY6k9GJ9Ea8a0QL8sGrePN"
+SARVAM_API_KEY = "enter yoour key"
 
 # Initialize embeddings once at startup
 print("[SIH] Loading sentence-transformers embeddings (all-MiniLM-L6-v2)...")
